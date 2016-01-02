@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Atmel Studio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "Tiny_MPPT", "Tiny_MPPT\Tiny_MPPT.cproj", "{91890652-93EA-4D60-B639-DDC498AD1EF3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|AVR = Debug|AVR
+		Release|AVR = Release|AVR
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{91890652-93EA-4D60-B639-DDC498AD1EF3}.Debug|AVR.ActiveCfg = Debug|AVR
+		{91890652-93EA-4D60-B639-DDC498AD1EF3}.Debug|AVR.Build.0 = Debug|AVR
+		{91890652-93EA-4D60-B639-DDC498AD1EF3}.Release|AVR.ActiveCfg = Release|AVR
+		{91890652-93EA-4D60-B639-DDC498AD1EF3}.Release|AVR.Build.0 = Release|AVR
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
