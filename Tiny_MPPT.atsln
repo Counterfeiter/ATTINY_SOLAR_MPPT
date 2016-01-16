@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Atmel Studio Solution File, Format Version 11.00
 Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "Tiny_MPPT", "Tiny_MPPT\Tiny_MPPT.cproj", "{91890652-93EA-4D60-B639-DDC498AD1EF3}"
 EndProject
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "Tiny25_MPPT", "Tiny25_MPPT\Tiny25_MPPT.cproj", "{262151E1-739C-46F9-A8FE-26A3B87B7EB1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|AVR = Debug|AVR
@@ -13,6 +15,10 @@ Global
 		{91890652-93EA-4D60-B639-DDC498AD1EF3}.Debug|AVR.Build.0 = Debug|AVR
 		{91890652-93EA-4D60-B639-DDC498AD1EF3}.Release|AVR.ActiveCfg = Release|AVR
 		{91890652-93EA-4D60-B639-DDC498AD1EF3}.Release|AVR.Build.0 = Release|AVR
+		{262151E1-739C-46F9-A8FE-26A3B87B7EB1}.Debug|AVR.ActiveCfg = Debug|AVR
+		{262151E1-739C-46F9-A8FE-26A3B87B7EB1}.Debug|AVR.Build.0 = Debug|AVR
+		{262151E1-739C-46F9-A8FE-26A3B87B7EB1}.Release|AVR.ActiveCfg = Release|AVR
+		{262151E1-739C-46F9-A8FE-26A3B87B7EB1}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

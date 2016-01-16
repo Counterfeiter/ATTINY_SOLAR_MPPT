@@ -1,7 +1,7 @@
 /*
- * Tiny_MPPT.c
+ * Tiny25_MPPT.c
  *
- * Created: 28.11.2015 13:11:27
+ * Created: 13.01.2016 13:11:27
  *  Author: Sebastian Foerster
  */ 
 
@@ -18,24 +18,24 @@
 #define F_CPU 1000000UL
 #endif
 
+
 #include <util/delay.h>
 
 //precaluclatet compare values -> use ref voltage and voltage devider -> 1,1 Vref
 #define DEFINE_5V_VALUE			202		//10 bit max ( 100 Ohm / ( 2k2 Ohm + 100 Ohm) )
-#define DEFINE_WAKEUP_VALUE		220		//10 bit max ( 100 Ohm / ( 2k2 Ohm + 100 Ohm) )
+#define DEFINE_WAKEUP_VALUE		200		//10 bit max ( 100 Ohm / ( 2k2 Ohm + 100 Ohm) )
 #define DEFINE_4V2_VALUE		680		//10 bit max ( 47k Ohm / ( 47k Ohm + 220k Ohm) )
 
 #define MIN_POWER_TO_SLEEP		2000	//20 bit max
 #define CNT_UNDERVOLTAGE_REF	60000	//16 bit max
 
-//can't be changed at this tiny13 device
+//can't be changed at this tiny device
 #define DEFINE_MAX_TIMER_PER	255		//8 bit max
 
-
 // use also internal ref
-#define ADCMUX_CELL_VOLTAGE		(0x01 | (1<<REFS0))
-#define ADCMUX_CELL_CURRENT		(0x02 | (1<<REFS0)) // 0.27 Ohm no devider
-#define ADCMUX_ACCU_VOLTAGE		(0x03 | (1<<REFS0))
+#define ADCMUX_CELL_VOLTAGE		(0x01 | (1<<REFS1))
+#define ADCMUX_CELL_CURRENT		(0x02 | (1<<REFS1)) // 0.27 Ohm no devider
+#define ADCMUX_ACCU_VOLTAGE		(0x03 | (1<<REFS1))
 
 uint16_t accu_voltage = 0;
 uint16_t cell_voltage = 0;
@@ -73,10 +73,6 @@ ISR(ADC_vect)
 
 }
 
-ISR(TIM0_OVF_vect) {
-	//do we need this?
-}
-
 ISR(WDT_vect) {
 	//use watchdog just to wake up (interrupt required!)
 }
@@ -84,21 +80,31 @@ ISR(WDT_vect) {
 
 int main(void)
 {
+	
+	//clock a 8 MHz source to about 10 MHz -> give us a ~ 312.5 kHz timer... results in a smaller inductor
+	//could tune this without problem, because we don't try to write Flash or EEPROM
+	OSCCAL = 0x7F; 
+
 	// enable watchdog for sleep
 	// prescale timer to 4s
 	WDTCR |= (1<<WDP3);
 	
 	// Enable watchdog timer interrupts not for system reset
-	WDTCR |= (1<<WDTIE);
+	WDTCR |= (1<<WDIE);
 	
 	// Use the power down sleep mode
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 	
 	//set outputs
 	DDRB = 0b00000011;
+		
+	volatile uint8_t *pwm = &OCR1A;
 	
-	//Timer with cpu frequency
-	TCCR0B = 0b00000001;
+	PLLCSR |= (1<<PLLE); //don't care about start timing of pll?
+		
+	_delay_ms(1);
+		
+	PLLCSR |= (1<<PCKE);
 
 	ADMUX = ADCMUX_CELL_VOLTAGE;                 // select start channel (mux)
 		
@@ -110,14 +116,26 @@ int main(void)
 		
 	//global interrupt enable
 	sei();
+	
 
-
-	OCR0A = 255;
+	(*pwm) = 255;
+	
+	/*for(uint8_t i = 0;i < 100; i++) {
+		_delay_ms(100);
+	}*/
+	
+	
+	//use timer 0 here just to trigger the adc read with pwm (timer 1) in sync...
+	//because timer 1 with pll has no trigger to the adc
+	//but timer 0 runs only 8 times slower... gets the same position
+	//start Timer 0 with cpu frequency
+	TCCR0B = 0b00000001;
 
 	//Timer channel A as PWM, phase correct PWM start
 	TCCR0A |= (1<<COM0A0) | (1<<COM0A1) | (1<<WGM00) | (1<<WGM01);
-	//timer interrupt (BOTTOM) enable
-	//TIMSK0 |= (1<<TOIE0);
+	
+	//Timer with cpu * 8 frequency (pll)
+	TCCR1 = 0b01110001;
 	
 	//start adc conversation
 	ADCSRA |= (1<<ADSC);
@@ -144,34 +162,36 @@ int main(void)
 
         uint32_t power_act = c_voltage * c_current;
         
+		//if it in the range we can charge a battery?
         if(c_voltage < DEFINE_5V_VALUE || a_voltage > DEFINE_4V2_VALUE) {
-	        if(OCR0A < DEFINE_MAX_TIMER_PER) 
-				OCR0A++;
+			//no charging
+	        if((*pwm) < DEFINE_MAX_TIMER_PER) 
+				(*pwm)++;
 	    } 
 		else 
 		{
 	        if(power_act > power_old) {
 		        if(c_voltage > c_voltage_old) {
-			        if(OCR0A > 0)
-						OCR0A--;
+			        if((*pwm) > 0)
+						(*pwm)--;
 		        }
 		        else
 		        {
-			        if(OCR0A < DEFINE_MAX_TIMER_PER)
-						OCR0A++;
+			        if((*pwm) < DEFINE_MAX_TIMER_PER)
+						(*pwm)++;
 		        }
 	        }
 	        else
 	        {
 		        if(c_voltage <= c_voltage_old) 
 				{
-			        if(OCR0A > 0)
-						OCR0A--;
+			        if((*pwm) > 0)
+						(*pwm)--;
 		        }
 		        else
 		        {
-			        if(OCR0A < DEFINE_MAX_TIMER_PER)
-						OCR0A++;
+			        if((*pwm) < DEFINE_MAX_TIMER_PER)
+						(*pwm)++;
 		        }
 	        }
         }
@@ -185,7 +205,7 @@ int main(void)
 			if(cnt_undervoltage > CNT_UNDERVOLTAGE_REF) {
 				cnt_undervoltage = 0;
 				
-				TCCR0A = 0; //disable timer = shutdown high side mosfet
+				TCCR1 = 0; //disable timer = shutdown high side mosfet
 				
 				do {
 					//disable interrupt
@@ -215,11 +235,23 @@ int main(void)
 				//reset pending interrupt
 				ADCSRA |= (1<<ADIF);
 				
+				PLLCSR |= (1<<PLLE); 
+					
+				_delay_ms(1);
+					
+				PLLCSR |= (1<<PCKE);
+				
 				//enable timer after sleep
-				OCR0A = 255;
+				(*pwm) = 255;
+				
+				//sync timers
+				TCNT0 = 0;
+				TCNT1 = 0;
 				
 				//Timer channel A as PWM, phase correct PWM start
 				TCCR0A |= (1<<COM0A0) | (1<<COM0A1) | (1<<WGM00) | (1<<WGM01);
+				//Timer with cpu * 8 frequency (pll)
+				TCCR1 = 0b01110001;
 				
 				//enable interrupt
 				ADCSRA |= (1<<ADIE);
